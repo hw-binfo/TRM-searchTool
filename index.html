@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MB lab TRM Ingredient search tool</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f8f8f8;
+      color: #333;
+      padding: 2rem;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .page-header img {
+      height: 94px;
+      border-radius: 6px;
+    }
+
+    h1 {
+      font-weight: 600;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      overflow: hidden;
+      display: flex;
+      color: #333;
+      flex-direction: column;
+    }
+
+    .card h2 {
+      padding: 1rem 1.25rem;
+      font-size: 1.1rem;
+      font-weight: 500;
+      border-bottom: 1px solid #eee;
+    }
+
+    .card iframe {
+      width: 100%;
+      height: 500px;
+      border: none;
+    }
+
+    .instructions {
+      max-width: 1400px;
+      margin: 2rem auto 0;
+      padding: 1rem 1.25rem;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .instructions code {
+      background: #f0f0f0;
+      padding: 0.15em 0.4em;
+      border-radius: 3px;
+      font-size: 0.85em;
+    }
+
+    .click-hint {
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: #999;
+      margin-left: 0.5rem;
+    }
+
+    .actions {
+      max-width: 1400px;
+      margin: 1.5rem auto 0;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .btn-register {
+      display: inline-block;
+      padding: 0.7rem 1.5rem;
+      background: #4a6cf7;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .btn-register:hover { background: #3a5ae0; }
+
+    /* Search bar */
+    .search-section {
+      max-width: 580px;
+      margin: 0 auto 2rem;
+    }
+    .search-form {
+      display: flex;
+      border-radius: 999px;
+      overflow: hidden;
+      box-shadow: 0 2px 14px rgba(0,0,0,0.25);
+    }
+    .search-input {
+      flex: 1;
+      padding: 0.75rem 1.25rem;
+      border: none;
+      font-size: 0.97rem;
+      outline: none;
+      color: #333;
+    }
+    .search-btn {
+      padding: 0.75rem 1.4rem;
+      background: #4a6cf7;
+      color: #fff;
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .search-btn:hover { background: #3a5ae0; }
+
+    .quick-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.65rem;
+      margin-top: 0.75rem;
+    }
+    .quick-btn {
+      display: inline-block;
+      padding: 0.5rem 1.1rem;
+      border-radius: 999px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+      background: #4a6cf7;
+      color: #fff;
+      border: 1px solid rgba(153,153,153,0.35);
+    }
+    .quick-btn:hover { background: rgba(153,153,153,0.28); color: #bbb; }
+    .quick-btn-primary {
+      background: #4a6cf7;
+      color: #fff;
+      border-color: transparent;
+    }
+    .quick-btn-primary:hover { background: #3a5ae0; }
+
+    /* Hamburger menu button */
+    .menu-btn {
+      position: fixed;
+      top: 1.25rem;
+      right: 1.5rem;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      z-index: 200;
+      background: transparent;
+      border: none;
+      padding: 0;
+    }
+    .menu-btn span {
+      display: block;
+      width: 24px;
+      height: 2.5px;
+      background: #fff;
+      border-radius: 2px;
+    }
+
+    /* Overlay */
+    .side-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 300;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    .side-overlay.open { opacity: 1; pointer-events: auto; }
+
+    /* Side panel */
+    .side-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 260px;
+      height: 100%;
+      background: #0a1245;
+      z-index: 400;
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem;
+      box-shadow: -4px 0 24px rgba(0,0,0,0.35);
+    }
+    .side-panel.open { transform: translateX(0); }
+
+    .side-panel-close {
+      align-self: flex-end;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 1.6rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+      margin-bottom: 2rem;
+    }
+    .side-panel-close:hover { color: #a0b4ff; }
+
+    .side-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    .side-nav-btn {
+      display: block;
+      padding: 0.8rem 1.1rem;
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: background 0.2s;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+    }
+    .side-nav-btn:hover { background: rgba(255,255,255,0.18); }
+  </style>
+</head>
+<body>
+
+  <!-- Hamburger button -->
+  <button class="menu-btn" id="menu-btn" aria-label="Open menu">
+    <span></span><span></span><span></span>
+  </button>
+
+  <!-- Side panel overlay -->
+  <div class="side-overlay" id="side-overlay"></div>
+
+  <!-- Side panel -->
+  <div class="side-panel" id="side-panel">
+    <button class="side-panel-close" id="side-panel-close" aria-label="Close menu">&times;</button>
+    <nav class="side-nav">
+      <a href="browse.html" class="side-nav-btn">Browse Ingredients</a>
+      <a href="register.html" class="side-nav-btn">Register new ingredient</a>
+      <a href="efficacy-browse.html" class="side-nav-btn">Browse ingredient by efficacy</a>
+    </nav>
+  </div>
+
+  <div class="page-header">
+    <img src="image/MB Lab logo.png" alt="MB Lab logo">
+    <h1>TRM - Ingredient search tool</h1>
+  </div>
+
+  <div class="search-section">
+    <form class="search-form" id="search-form" action="search-results.html" method="get">
+      <input class="search-input" type="text" name="q" id="search-input"
+             placeholder="Search by ingredient name or INCI name..." autocomplete="off">
+      <button class="search-btn" type="submit">Search</button>
+    </form>
+    <div class="quick-actions">
+      <a href="browse.html" class="quick-btn">Browse all ingredients</a>
+      <a href="efficacy-browse.html" class="quick-btn">Browse ingredient by efficacy</a>
+      <a href="register.html" class="quick-btn quick-btn-primary">Register new ingredient</a>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Ingredient Functional Profile - Scatter Plot</h2>
+      <iframe src="plots/Ingrdient_scatter_v2.html" loading="lazy"></iframe>
+    </div>
+    <div class="card">
+      <h2>MB LAB Ingredients by Efficacy <span class="click-hint">Click a bar to see ingredients</span></h2>
+      <iframe src="plots/barchart.html" loading="lazy"></iframe>
+    </div>
+  </div>
+
+  <script src="data/auth-guard.js"></script>
+  <script>
+    var menuBtn     = document.getElementById('menu-btn');
+    var sidePanel   = document.getElementById('side-panel');
+    var sideOverlay = document.getElementById('side-overlay');
+    var closeBtn    = document.getElementById('side-panel-close');
+
+    function openPanel()  { sidePanel.classList.add('open');    sideOverlay.classList.add('open'); }
+    function closePanel() { sidePanel.classList.remove('open'); sideOverlay.classList.remove('open'); }
+
+    menuBtn.addEventListener('click', openPanel);
+    closeBtn.addEventListener('click', closePanel);
+    sideOverlay.addEventListener('click', closePanel);
+  </script>
+
+  <!-- <div class="instructions">
+    <strong>Usage:</strong>
+    <ol>
+      <li>Edit <code>generate_plots.R</code> — set <code>CSV_PATH</code> and column names to match your data.</li>
+      <li>Run <code>Rscript generate_plots.R</code></li>
+      <li>Open this file (<code>index.html</code>) in a browser.</li>
+    </ol>
+  </div> -->
+</body>
+</html>

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register New Ingredient</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f8f8f8;
+      color: #333;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: #a0b4ff;
+      text-decoration: none;
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+      transition: color 0.2s;
+    }
+    .back-btn:hover { color: #fff; }
+    .back-btn::before { content: "\2190"; font-size: 1.1em; }
+
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      color: #333;
+      padding: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 0.4rem;
+      color: #333;
+    }
+
+    .form-group input[type="text"] {
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input[type="text"]:focus { border-color: #4a6cf7; }
+
+    .form-group select {
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+      background: #fff;
+      transition: border-color 0.2s;
+    }
+    .form-group select:focus { border-color: #4a6cf7; }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 1.25rem 0;
+    }
+
+    .efficacy-section label.section-title {
+      display: block;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 0.6rem;
+      color: #333;
+    }
+
+    .required-hint {
+      font-weight: 400;
+      font-size: 0.8rem;
+      color: #888;
+    }
+
+    .validation-msg {
+      margin-top: 0.4rem;
+      font-size: 0.82rem;
+      color: #e04040;
+    }
+
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 0.5rem;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid #e0e3eb;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      font-size: 0.88rem;
+      user-select: none;
+    }
+    .checkbox-item:hover { background: #f0f3ff; border-color: #b0c0f0; }
+    .checkbox-item input[type="checkbox"] {
+      accent-color: #4a6cf7;
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+    .checkbox-item.checked {
+      background: #eef1ff;
+      border-color: #4a6cf7;
+    }
+
+    /* Disabled text input (RMS "no code" state) */
+    .form-group input[type="text"]:disabled {
+      background: #f5f5f5;
+      color: #aaa;
+      cursor: not-allowed;
+    }
+
+    /* "I don't have a code number yet" checkbox sits below the input */
+    .no-code-item {
+      display: inline-flex;
+      margin-top: 0.5rem;
+    }
+
+    /* China compliant checkbox — red tint when checked */
+    .china-compliant-item.checked {
+      background: #fff0f0;
+      border-color: #e04040;
+    }
+    .china-check-indicator {
+      visibility: hidden;
+      color: #e04040;
+      font-size: 1.1rem;
+      font-weight: 900;
+      width: 1.1rem;
+      flex-shrink: 0;
+    }
+    .china-compliant-item.checked .china-check-indicator {
+      visibility: visible;
+    }
+
+    .btn-submit {
+      display: block;
+      width: 100%;
+      padding: 0.8rem;
+      margin-top: 1.5rem;
+      background: #4a6cf7;
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-submit:hover { background: #3a5ae0; }
+
+    .success-banner {
+      display: none;
+      background: #1a6b3a;
+      color: #fff;
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .success-banner.show {
+      display: flex;
+    }
+    .success-banner-close {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 1.2rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0 0.2rem;
+      flex-shrink: 0;
+    }
+    .success-banner-hint {
+      font-size: 0.8rem;
+      opacity: 0.85;
+      margin-top: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="index.html" class="back-btn">Back to Dashboard</a>
+
+    <div class="header">
+      <h1>Register New Ingredient</h1>
+    </div>
+
+    <div class="success-banner" id="success-banner">
+      <div>
+        <div>Your ingredient was successfully submitted!</div>
+        <div>It will soon be incorporated into our ingredient list after review.</div>
+        <div class="success-banner-hint">A file named <strong>registered_data.js</strong> was downloaded. Save it to the <strong>data/</strong> folder to keep your submission.</div>
+      </div>
+      <button class="success-banner-close" id="banner-close" aria-label="Close">&times;</button>
+    </div>
+
+    <div class="card">
+      <form id="register-form">
+        <div class="form-group">
+          <label for="category">Category</label>
+          <select id="category" required>
+            <option value="" disabled selected>Select a category</option>
+            <option value="Bio">Bio</option>
+            <option value="Complex">Complex</option>
+            <option value="Natural">Natural</option>
+            <option value="기타">기타</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="ingredient-name">Ingredient Name</label>
+          <input type="text" id="ingredient-name" placeholder="e.g. Absolute S" required>
+        </div>
+
+        <div class="form-group">
+          <label for="inci-name">INCI Name</label>
+          <input type="text" id="inci-name" placeholder="e.g. Spermidine" required>
+        </div>
+
+        <div class="form-group">
+          <label for="rms-code">RMS Code Number</label>
+          <input type="text" id="rms-code" placeholder="e.g. 6000000">
+          <label class="checkbox-item no-code-item" id="no-code-label">
+            <input type="checkbox" id="no-code-cb">
+            <span>I don't have a code number yet</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="section-title" style="margin-bottom:0.5rem;">China Compliant</label>
+          <label class="checkbox-item china-compliant-item" id="china-label">
+            <input type="checkbox" id="china-cb" name="china-compliant">
+            <span class="china-check-indicator">&#10004;</span>
+            <span>China compliant</span>
+          </label>
+        </div>
+
+        <hr class="divider">
+
+        <div class="efficacy-section">
+          <label class="section-title">Tags <span class="required-hint">(select at least one)</span></label>
+          <div class="checkbox-grid" id="tag-checkboxes"></div>
+          <div class="validation-msg" id="tag-validation" style="display:none;">Please select at least one tag.</div>
+        </div>
+
+        <hr class="divider">
+
+        <div class="efficacy-section">
+          <label class="section-title">Efficacy (select all that apply)</label>
+          <div class="checkbox-grid" id="efficacy-checkboxes"></div>
+        </div>
+
+        <button type="submit" class="btn-submit">Complete register</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- registered_data.js accumulates pending submissions; start with empty array if file not yet saved -->
+  <script src="data/registered_data.js"></script>
+  <!-- Load data to read efficacy column names dynamically -->
+  <script src="data/auth-guard.js"></script>
+  <script>
+    // Helper: build a checkbox group
+    function buildCheckboxGroup(container, name, items) {
+      items.forEach(function(val) {
+        var label = document.createElement('label');
+        label.className = 'checkbox-item';
+
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.name = name;
+        cb.value = val;
+
+        var span = document.createElement('span');
+        span.textContent = val;
+
+        label.appendChild(cb);
+        label.appendChild(span);
+        container.appendChild(label);
+
+        cb.addEventListener('change', function() {
+          label.classList.toggle('checked', cb.checked);
+        });
+      });
+    }
+
+    // RMS Code Number — "no code" checkbox auto-fills N/A
+    var noCodeCb  = document.getElementById('no-code-cb');
+    var rmsInput  = document.getElementById('rms-code');
+    var noCodeLabel = document.getElementById('no-code-label');
+    noCodeCb.addEventListener('change', function() {
+      if (this.checked) {
+        rmsInput.value    = 'N/A';
+        rmsInput.disabled = true;
+        noCodeLabel.classList.add('checked');
+      } else {
+        rmsInput.value    = '';
+        rmsInput.disabled = false;
+        noCodeLabel.classList.remove('checked');
+      }
+    });
+
+    // China compliant — toggle red style
+    var chinaCb    = document.getElementById('china-cb');
+    var chinaLabel = document.getElementById('china-label');
+    chinaCb.addEventListener('change', function() {
+      chinaLabel.classList.toggle('checked', this.checked);
+    });
+
+    // Build tag checkboxes
+    var tagOptions = META_DATA.tag_options || [
+      "Skin microbiome", "Hair microbiome", "Environmental microbiome",
+      "Single chemical", "Natural extract", "etc."
+    ];
+    buildCheckboxGroup(document.getElementById('tag-checkboxes'), 'tags', tagOptions);
+
+    // Build efficacy checkboxes
+    var efficacyCols = META_DATA.efficacy_columns || [];
+    buildCheckboxGroup(document.getElementById('efficacy-checkboxes'), 'efficacy', efficacyCols);
+
+    // Handle form submission
+    document.getElementById('register-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      // Validate: at least one tag must be selected
+      var tagChecked = document.querySelectorAll('input[name="tags"]:checked');
+      var tagValidation = document.getElementById('tag-validation');
+      if (tagChecked.length === 0) {
+        tagValidation.style.display = 'block';
+        return;
+      }
+      tagValidation.style.display = 'none';
+
+      var category       = document.getElementById('category').value;
+      var name           = document.getElementById('ingredient-name').value.trim();
+      var inci           = document.getElementById('inci-name').value.trim();
+      var rmsCode        = document.getElementById('rms-code').value.trim() || 'N/A';
+      var chinaCompliant = document.getElementById('china-cb').checked ? 'Y' : 'N';
+
+      var selectedTags = [];
+      tagChecked.forEach(function(cb) { selectedTags.push(cb.value); });
+
+      var selectedEfficacy = [];
+      document.querySelectorAll('input[name="efficacy"]:checked').forEach(function(cb) {
+        selectedEfficacy.push(cb.value);
+      });
+
+      // Build the ingredient object (matching data/data.js format)
+      var ingredient = {
+        "Num.":            "pending",
+        "Category":        category,
+        "Ingredient name": name,
+        "INCI Name":       inci,
+        "RMS Code Number": rmsCode,
+        "China compliant": chinaCompliant
+      };
+      efficacyCols.forEach(function(eff) {
+        ingredient[eff] = selectedEfficacy.indexOf(eff) >= 0 ? "O" : "-";
+      });
+      ingredient["Tags"] = selectedTags.join(",");
+
+      // Append to the in-memory REGISTERED_DATA array (loaded from data/registered_data.js)
+      REGISTERED_DATA.push(ingredient);
+
+      // Generate and auto-download the updated registered_data.js
+      var jsContent = 'var REGISTERED_DATA = ' + JSON.stringify(REGISTERED_DATA, null, 2) + ';\n';
+      var blob = new Blob([jsContent], { type: 'application/javascript' });
+      var url  = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.href     = url;
+      link.download = 'registered_data.js';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      // Show success banner and scroll to top
+      document.getElementById('success-banner').classList.add('show');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // Reset form
+      this.reset();
+      rmsInput.disabled = false;
+      document.querySelectorAll('.checkbox-item.checked').forEach(function(el) {
+        el.classList.remove('checked');
+      });
+    });
+
+    // Dismiss banner
+    document.getElementById('banner-close').addEventListener('click', function() {
+      document.getElementById('success-banner').classList.remove('show');
+    });
+  </script>
+</body>
+</html>

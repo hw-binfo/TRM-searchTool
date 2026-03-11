@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ingredient Detail</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0c1757;
+      color: #fff;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: #a0b4ff;
+      text-decoration: none;
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+      transition: color 0.2s;
+    }
+    .back-btn:hover { color: #fff; }
+    .back-btn::before { content: "\2190"; font-size: 1.1em; }
+
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+      color: #333;
+      overflow: hidden;
+    }
+
+    /* ── Header strip ── */
+    .card-header {
+      padding: 1.5rem 1.75rem 1.25rem;
+      border-bottom: 1px solid #eee;
+    }
+
+    .ing-num {
+      font-size: 0.8rem;
+      color: #999;
+      margin-bottom: 0.3rem;
+    }
+
+    .ing-name {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      line-height: 1.2;
+    }
+
+    .ing-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+    .badge-category { background: #eef1ff; color: #4a6cf7; border: 1px solid #c8d1fb; }
+    .badge-china    { background: #fff0f0; color: #e04040; border: 1px solid #f5b8b8; }
+
+    /* ── Info table ── */
+    .card-body {
+      padding: 1.5rem 1.75rem;
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #999;
+      margin-bottom: 0.75rem;
+    }
+
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1.75rem;
+    }
+    .info-table tr + tr td,
+    .info-table tr + tr th { border-top: 1px solid #f0f0f0; }
+    .info-table th {
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #555;
+      padding: 0.6rem 0.5rem 0.6rem 0;
+      width: 170px;
+      vertical-align: top;
+      white-space: nowrap;
+    }
+    .info-table td {
+      padding: 0.6rem 0.5rem;
+      font-size: 0.9rem;
+      vertical-align: top;
+      word-break: break-word;
+    }
+
+    .china-check {
+      color: #e04040;
+      font-size: 1.1rem;
+      font-weight: 900;
+      margin-right: 0.25rem;
+    }
+
+    /* ── Tags ── */
+    .tags-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1.75rem;
+    }
+    .tag {
+      display: inline-block;
+      background: #eef1ff;
+      color: #4a6cf7;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 500;
+    }
+    .tag-none {
+      font-size: 0.85rem;
+      color: #bbb;
+    }
+
+    /* ── Efficacy grid ── */
+    .eff-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+      gap: 0.5rem;
+    }
+    .eff-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 7px;
+      font-size: 0.87rem;
+    }
+    .eff-item.active {
+      background: #ededff;
+      color: #4a6cf7;
+      border: 1px solid #a0b6df;
+      font-weight: 600;
+    }
+    .eff-item.inactive {
+      background: #f8f8f8;
+      color: #bbb;
+      border: 1px solid #ebebeb;
+    }
+    .eff-icon {
+      font-size: 1rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    /* ── Not found ── */
+    .not-found {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #a0b4ff;
+    }
+    .not-found h2 { font-size: 1.3rem; margin-bottom: 0.5rem; }
+    .not-found p  { font-size: 0.9rem; opacity: 0.7; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="index.html" class="back-btn">Back to Dashboard</a>
+    <div id="content"></div>
+  </div>
+
+  <script src="data/auth-guard.js"></script>
+  <script>
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    var params = new URLSearchParams(window.location.search);
+    var targetName = params.get('name') || '';
+
+    // Find the ingredient in INGREDIENT_DATA
+    var ing = null;
+    for (var i = 0; i < INGREDIENT_DATA.length; i++) {
+      if (INGREDIENT_DATA[i]['Ingredient name'] === targetName) {
+        ing = INGREDIENT_DATA[i];
+        break;
+      }
+    }
+
+    var contentEl = document.getElementById('content');
+
+    if (!ing) {
+      contentEl.innerHTML =
+        '<div class="not-found">' +
+          '<h2>Ingredient not found</h2>' +
+          '<p>"' + esc(targetName) + '" was not found in the ingredient list.</p>' +
+        '</div>';
+    } else {
+      var infoCols     = META_DATA.info_columns    || [];
+      var efficacyCols = META_DATA.efficacy_columns || [];
+
+      // ── Header ──
+      var numLabel = (ing['Num.'] && ing['Num.'] !== 'pending')
+        ? 'No. ' + ing['Num.']
+        : '';
+      var chineseBadge = (String(ing['China compliant']) === 'Y')
+        ? '<span class="badge badge-china"><span class="china-check">\u2714</span> China compliant</span>'
+        : '';
+
+      var headerHtml =
+        '<div class="card-header">' +
+          (numLabel ? '<div class="ing-num">' + esc(numLabel) + '</div>' : '') +
+          '<div class="ing-name">' + esc(ing['Ingredient name'] || '') + '</div>' +
+          '<div class="ing-badges">' +
+            '<span class="badge badge-category">' + esc(ing['Category'] || '') + '</span>' +
+            chineseBadge +
+          '</div>' +
+        '</div>';
+
+      // ── Info rows (INCI Name, RMS Code Number) ──
+      var infoRowFields = ['INCI Name', 'RMS Code Number'];
+      var infoRowsHtml = '';
+      infoRowFields.forEach(function(field) {
+        if (infoCols.indexOf(field) >= 0 && ing[field] !== undefined) {
+          infoRowsHtml +=
+            '<tr><th>' + esc(field) + '</th>' +
+            '<td>' + esc(ing[field]) + '</td></tr>';
+        }
+      });
+
+      // ── Tags ──
+      var tagsStr  = String(ing['Tags'] || '').trim();
+      var tagItems = tagsStr ? tagsStr.split(',').map(function(t) { return t.trim(); }).filter(Boolean) : [];
+      var tagsHtml = tagItems.length
+        ? tagItems.map(function(t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('')
+        : '<span class="tag-none">—</span>';
+
+      // ── Efficacy grid ──
+      var effHtml = efficacyCols.map(function(eff) {
+        var active = String(ing[eff]) === 'O';
+        return '<div class="eff-item ' + (active ? 'active' : 'inactive') + '">' +
+          '<span class="eff-icon">' + (active ? '\u25cf' : '\u25cb') + '</span>' +
+          '<span>' + esc(eff) + '</span>' +
+        '</div>';
+      }).join('');
+
+      // ── Assemble ──
+      contentEl.innerHTML =
+        '<div class="card">' +
+          headerHtml +
+          '<div class="card-body">' +
+            '<div class="section-label">Basic Information</div>' +
+            '<table class="info-table"><tbody>' + infoRowsHtml + '</tbody></table>' +
+            '<div class="section-label">Tags</div>' +
+            '<div class="tags-wrap">' + tagsHtml + '</div>' +
+            '<div class="section-label">Efficacy Profile</div>' +
+            '<div class="eff-grid">' + effHtml + '</div>' +
+          '</div>' +
+        '</div>';
+
+      // Update page title
+      document.title = (ing['Ingredient name'] || 'Ingredient') + ' — MB Lab TRM';
+    }
+  </script>
+</body>
+</html>

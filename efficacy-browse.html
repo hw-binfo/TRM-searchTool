@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browse by Efficacy</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0c1757;
+      color: #fff;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: #a0b4ff;
+      text-decoration: none;
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+      transition: color 0.2s;
+    }
+    .back-btn:hover { color: #fff; }
+    .back-btn::before { content: "\2190"; font-size: 1.1em; }
+
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+
+    /* ── Layout ── */
+    .layout {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 210px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 1.5rem;
+    }
+
+    .filter-card {
+      background: #f5f6fa;
+      border-radius: 8px;
+      padding: 1.1rem 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .filter-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #333;
+      margin-bottom: 0.65rem;
+    }
+    .filter-hint {
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 0.7rem;
+      color: #333;
+    }
+
+    .filter-item {
+      display: block;
+      padding: 0.42rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.87rem;
+      cursor: pointer;
+      color: #333;
+      transition: background 0.15s, color 0.15s;
+      user-select: none;
+      margin-bottom: 0.2rem;
+    }
+    .filter-item:hover  { background: rgba(255,255,255,0.1); color: #fff; }
+    .filter-item.active { background: #4a6cf7; color: #fff; font-weight: 600; }
+
+    .clear-filters-btn {
+      display: block;
+      width: 100%;
+      margin-top: 1rem;
+      padding: 0.5rem;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 6px;
+      color: #a0b4ff;
+      font-size: 0.82rem;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    .clear-filters-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+    /* ── Main content ── */
+    .main { flex: 1; min-width: 0; }
+
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      overflow: hidden;
+      color: #333;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem 1rem;
+      background: #f5f6fa;
+      border-bottom: 1px solid #e0e3eb;
+      flex-wrap: wrap;
+    }
+    .toolbar .count {
+      font-size: 0.85rem;
+      color: #666;
+      white-space: nowrap;
+    }
+    .toolbar input[type="text"] {
+      flex: 1;
+      min-width: 180px;
+      padding: 0.45rem 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .toolbar input[type="text"]:focus { border-color: #4a6cf7; }
+
+    /* Active filter chips shown in toolbar */
+    .active-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      align-items: center;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.65rem 0.2rem 0.55rem;
+      background: #eef1ff;
+      color: #4a6cf7;
+      border: 1px solid #c8d1fb;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .chip-cat { background: #e8ffee; color: #00c86b; border-color: #a0f5cb; }
+
+    .table-wrapper { overflow-x: auto; }
+
+    table {
+      width: auto;
+      min-width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    thead th {
+      background: #f5f6fa;
+      padding: 0.7rem 0.9rem;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 2px solid #e0e3eb;
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    tbody td {
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid #eee;
+      vertical-align: top;
+    }
+    tbody tr:hover { background: #f0f3ff; }
+
+    /* Column resize handle */
+    .col-resize-handle {
+      position: absolute;
+      right: -3px; top: 0;
+      width: 6px; height: 100%;
+      cursor: col-resize;
+      z-index: 10;
+      background: transparent;
+    }
+    .col-resize-handle:hover,
+    .col-resize-handle.active { background: rgba(74, 108, 247, 0.35); }
+
+    .tag-cell  { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .tag-badge {
+      display: inline-block;
+      padding: 0.15em 0.55em;
+      background: #e8ecff; color: #3a5ae0;
+      border-radius: 999px; font-size: 0.75rem; font-weight: 500; white-space: nowrap;
+    }
+
+    .eff-cell  { text-align: center; }
+    .eff-dot   { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #4a6cf7; }
+    .eff-dot.selected-eff { background: #7d40e0; }
+
+    /* Selected efficacy column highlight */
+    thead th.eff-col-selected {
+      background: #ddd6ff !important;
+      border-bottom-color: #9b7fe8;
+    }
+    tbody td.eff-col-selected {
+      background: #f4f0ff;
+    }
+    tbody tr:hover td.eff-col-selected {
+      background: #ece6ff;
+    }
+    .china-check { color: #e04040; font-size: 1.2rem; font-weight: 900; }
+    .eff-dash  { color: #ccc; font-size: 0.8rem; }
+
+    .ing-link { color: #4a6cf7; text-decoration: none; font-weight: 500; }
+    .ing-link:hover { text-decoration: underline; }
+
+    .no-data {
+      padding: 3rem; text-align: center; color: #888; font-size: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .layout { flex-direction: column; }
+      .sidebar { width: 100%; position: static; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="index.html" class="back-btn">Back to Dashboard</a>
+    <h1 class="page-title">Browse Ingredients by Efficacy</h1>
+
+    <div class="layout">
+
+      <!-- ── Sidebar ── -->
+      <div class="sidebar">
+
+        <div class="filter-card">
+          <div class="filter-title">Category<span class="filter-hint">(Single-select)</span></div>
+          <div id="category-filters"></div>
+        </div>
+
+        <div class="filter-card">
+          <div class="filter-title">Regulation</div>
+          <div id="china-filter"></div>
+        </div>
+
+        <div class="filter-card">
+          <div class="filter-title">Efficacy <span class="filter-hint">(Multi-select available)</span></div>
+          <div id="efficacy-filters"></div>
+        </div>
+
+        <button class="clear-filters-btn" id="clear-btn">Clear all filters</button>
+      </div>
+
+      <!-- ── Main content ── -->
+      <div class="main">
+        <div class="card">
+          <div class="toolbar">
+            <span class="count" id="count-info">Loading...</span>
+            <div class="active-filters" id="active-filters"></div>
+            <input type="text" id="search-input" placeholder="Search ingredient name...">
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead id="table-head"></thead>
+              <tbody id="table-body"></tbody>
+            </table>
+            <div class="no-data" id="no-data" style="display:none;">No ingredients match the selected filters.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="data/auth-guard.js"></script>
+  <script>
+    function esc(s) {
+      var d = document.createElement('div');
+      d.textContent = String(s);
+      return d.innerHTML;
+    }
+
+    var infoCols     = META_DATA.info_columns    || [];
+    var efficacyCols = META_DATA.efficacy_columns || [];
+    var storedWidths = [];
+
+    var selectedCategory      = '';    // '' = all
+    var selectedChinaCompliant = false; // toggle
+    var selectedEfficacies    = [];    // AND logic — must have ALL of these
+
+    // ── Build Category filter ──
+    var categories = [];
+    INGREDIENT_DATA.forEach(function(row) {
+      var cat = String(row['Category'] || '');
+      if (cat && categories.indexOf(cat) < 0) categories.push(cat);
+    });
+    categories.sort();
+
+    var catContainer = document.getElementById('category-filters');
+    categories.forEach(function(cat) {
+      var item = document.createElement('div');
+      item.className = 'filter-item';
+      item.textContent = cat;
+      item.addEventListener('click', function() {
+        if (selectedCategory === cat) {
+          selectedCategory = '';
+          item.classList.remove('active');
+        } else {
+          catContainer.querySelectorAll('.filter-item').forEach(function(el) {
+            el.classList.remove('active');
+          });
+          selectedCategory = cat;
+          item.classList.add('active');
+        }
+        applyFilters();
+      });
+      catContainer.appendChild(item);
+    });
+
+    // ── Build China compliant filter ──
+    var chinaContainer = document.getElementById('china-filter');
+    var chinaItem = document.createElement('div');
+    chinaItem.className = 'filter-item';
+    chinaItem.textContent = 'China compliant';
+    chinaItem.addEventListener('click', function() {
+      selectedChinaCompliant = !selectedChinaCompliant;
+      chinaItem.classList.toggle('active', selectedChinaCompliant);
+      applyFilters();
+    });
+    chinaContainer.appendChild(chinaItem);
+
+    // ── Build Efficacy filter ──
+    var effContainer = document.getElementById('efficacy-filters');
+    efficacyCols.forEach(function(eff) {
+      var item = document.createElement('div');
+      item.className = 'filter-item';
+      item.textContent = eff;
+      item.dataset.eff = eff;
+      item.addEventListener('click', function() {
+        var idx = selectedEfficacies.indexOf(eff);
+        if (idx >= 0) {
+          selectedEfficacies.splice(idx, 1);
+          item.classList.remove('active');
+        } else {
+          selectedEfficacies.push(eff);
+          item.classList.add('active');
+        }
+        applyFilters();
+      });
+      effContainer.appendChild(item);
+    });
+
+    // ── Clear filters ──
+    document.getElementById('clear-btn').addEventListener('click', function() {
+      selectedCategory      = '';
+      selectedChinaCompliant = false;
+      selectedEfficacies    = [];
+      document.querySelectorAll('.filter-item.active').forEach(function(el) {
+        el.classList.remove('active');
+      });
+      document.getElementById('search-input').value = '';
+      applyFilters();
+    });
+
+    // ── Search input ──
+    document.getElementById('search-input').addEventListener('input', applyFilters);
+
+    // ── Apply all filters and re-render ──
+    function applyFilters() {
+      var searchQ = document.getElementById('search-input').value.toLowerCase();
+
+      var filtered = INGREDIENT_DATA.filter(function(row) {
+        // Category (single, optional)
+        if (selectedCategory && String(row['Category']) !== selectedCategory) return false;
+        // China compliant (toggle)
+        if (selectedChinaCompliant && String(row['China compliant']) !== 'Y') return false;
+        // Efficacy AND: must have 'O' for every selected efficacy
+        for (var i = 0; i < selectedEfficacies.length; i++) {
+          if (String(row[selectedEfficacies[i]]) !== 'O') return false;
+        }
+        // Text search across info columns
+        if (searchQ) {
+          var hit = infoCols.some(function(c) {
+            return String(row[c] || '').toLowerCase().indexOf(searchQ) !== -1;
+          });
+          if (!hit) return false;
+        }
+        return true;
+      });
+
+      updateChips();
+      renderTable(filtered);
+      updateCount(filtered.length, INGREDIENT_DATA.length);
+    }
+
+    // ── Active filter chips ──
+    function updateChips() {
+      var el = document.getElementById('active-filters');
+      if (!selectedCategory && !selectedChinaCompliant && selectedEfficacies.length === 0) {
+        el.innerHTML = '';
+        return;
+      }
+      var html = '';
+      if (selectedCategory) {
+        html += '<span class="chip chip-cat">' + esc(selectedCategory) + '</span>';
+      }
+      if (selectedChinaCompliant) {
+        html += '<span class="chip chip-cat">&#x2714; China compliant</span>';
+      }
+      selectedEfficacies.forEach(function(eff) {
+        html += '<span class="chip">' + esc(eff) + '</span>';
+      });
+      el.innerHTML = html;
+    }
+
+    // ── Render table ──
+    function renderTable(rows) {
+      var thead  = document.getElementById('table-head');
+      var tbody  = document.getElementById('table-body');
+      var noData = document.getElementById('no-data');
+
+      // Show all info cols including Category; exclude nothing
+      var displayInfoCols = infoCols.slice();
+
+      // Build header
+      var headerHtml = '<tr>';
+      displayInfoCols.forEach(function(c) {
+        if (c === 'China compliant') {
+          headerHtml += '<th class="eff-cell">' + esc(c) + '</th>';
+        } else {
+          headerHtml += '<th>' + esc(c) + '</th>';
+        }
+      });
+      headerHtml += '<th>Tags</th>';
+      efficacyCols.forEach(function(c) {
+        var sel = selectedEfficacies.indexOf(c) >= 0;
+        headerHtml += '<th class="eff-cell' + (sel ? ' eff-col-selected' : '') + '">' + esc(c) + '</th>';
+      });
+      headerHtml += '</tr>';
+      thead.innerHTML = headerHtml;
+
+      // Re-apply stored widths
+      if (storedWidths.length > 0) {
+        var thEls = thead.querySelectorAll('th');
+        for (var j = 0; j < thEls.length; j++) {
+          if (storedWidths[j]) thEls[j].style.width = storedWidths[j] + 'px';
+        }
+      }
+
+      if (rows.length === 0) {
+        tbody.innerHTML = '';
+        noData.style.display = 'block';
+        requestAnimationFrame(attachHandles);
+        return;
+      }
+      noData.style.display = 'none';
+
+      var bodyHtml = '';
+      rows.forEach(function(row) {
+        bodyHtml += '<tr>';
+        displayInfoCols.forEach(function(c) {
+          if (c === 'China compliant') {
+            if (String(row[c]) === 'Y') {
+              bodyHtml += '<td class="eff-cell"><span class="china-check">\u2714</span></td>';
+            } else {
+              bodyHtml += '<td class="eff-cell"></td>';
+            }
+          } else if (c === 'Ingredient name') {
+            bodyHtml += '<td><a class="ing-link" href="ingredient-detail.html?name=' +
+              encodeURIComponent(String(row[c] || '')) + '">' +
+              esc(String(row[c] || '')) + '</a></td>';
+          } else {
+            bodyHtml += '<td>' + esc(String(row[c] || '')) + '</td>';
+          }
+        });
+        // Tags
+        var tagsStr  = String(row['Tags'] || '');
+        var tagsHtml = '<td><div class="tag-cell">';
+        if (tagsStr) {
+          tagsStr.split(',').forEach(function(t) {
+            t = t.trim();
+            if (t) tagsHtml += '<span class="tag-badge">#' + esc(t) + '</span>';
+          });
+        }
+        tagsHtml += '</div></td>';
+        bodyHtml += tagsHtml;
+        // Efficacy dots — highlight selected columns
+        efficacyCols.forEach(function(c) {
+          var isActive   = String(row[c]) === 'O';
+          var isSelected = selectedEfficacies.indexOf(c) >= 0;
+          var colClass   = 'eff-cell' + (isSelected ? ' eff-col-selected' : '');
+          if (isActive) {
+            var dotClass = isSelected ? 'eff-dot selected-eff' : 'eff-dot';
+            bodyHtml += '<td class="' + colClass + '"><span class="' + dotClass + '"></span></td>';
+          } else {
+            bodyHtml += '<td class="' + colClass + '"><span class="eff-dash">-</span></td>';
+          }
+        });
+        bodyHtml += '</tr>';
+      });
+      tbody.innerHTML = bodyHtml;
+
+      requestAnimationFrame(attachHandles);
+    }
+
+    // ── Column resize ──
+    function attachHandles() {
+      var table = document.querySelector('table');
+      var ths   = Array.prototype.slice.call(table.querySelectorAll('thead th'));
+      if (!ths.length) return;
+
+      if (storedWidths.length === 0) {
+        storedWidths = ths.map(function(th) {
+          return Math.max(50, th.getBoundingClientRect().width);
+        });
+        table.style.tableLayout = 'fixed';
+        ths.forEach(function(th, i) { th.style.width = storedWidths[i] + 'px'; });
+      }
+
+      ths.forEach(function(th, i) {
+        var old = th.querySelector('.col-resize-handle');
+        if (old) old.remove();
+
+        var handle = document.createElement('div');
+        handle.className = 'col-resize-handle';
+        th.appendChild(handle);
+
+        handle.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          var startX = e.clientX;
+          var startW = th.getBoundingClientRect().width;
+          handle.classList.add('active');
+          document.body.style.cursor     = 'col-resize';
+          document.body.style.userSelect = 'none';
+
+          function onMove(ev) {
+            var w = Math.max(40, startW + (ev.clientX - startX));
+            th.style.width  = w + 'px';
+            storedWidths[i] = w;
+          }
+          function onUp() {
+            handle.classList.remove('active');
+            document.body.style.cursor     = '';
+            document.body.style.userSelect = '';
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup',   onUp);
+          }
+          document.addEventListener('mousemove', onMove);
+          document.addEventListener('mouseup',   onUp);
+        });
+      });
+    }
+
+    function updateCount(shown, total) {
+      var el = document.getElementById('count-info');
+      el.textContent = (shown === total)
+        ? total + ' ingredient(s)'
+        : shown + ' of ' + total + ' ingredient(s)';
+    }
+
+    // Initial render (no filters)
+    applyFilters();
+  </script>
+</body>
+</html>

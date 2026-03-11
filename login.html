@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MB Lab TRM — Sign In</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1f36 0%, #2d3561 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 2.8rem 2.5rem 2.2rem;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+    }
+    .logo { text-align: center; margin-bottom: 2rem; }
+    .logo h1 { font-size: 1.45rem; font-weight: 700; color: #1a1f36; letter-spacing: -0.02em; }
+    .logo p  { font-size: 0.82rem; color: #999; margin-top: 0.3rem; }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 0.4rem;
+    }
+    input[type="password"] {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border: 1.5px solid #ddd;
+      border-radius: 7px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.18s;
+    }
+    input[type="password"]:focus { border-color: #4a6cf7; }
+
+    .btn {
+      display: block;
+      width: 100%;
+      margin-top: 1.1rem;
+      padding: 0.78rem;
+      background: #4a6cf7;
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      font-size: 0.97rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.18s;
+    }
+    .btn:hover:not(:disabled) { background: #3a5ce6; }
+    .btn:disabled { background: #b0b8f8; cursor: not-allowed; }
+
+    .msg {
+      margin-top: 0.9rem;
+      font-size: 0.83rem;
+      text-align: center;
+      display: none;
+    }
+    .msg.error   { color: #d63031; }
+    .msg.loading { color: #888; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <h1>MB Lab TRM</h1>
+      <p>Ingredient Search Tool</p>
+    </div>
+
+    <label for="pw">Password</label>
+    <input type="password" id="pw" placeholder="Enter password" autocomplete="current-password">
+
+    <button class="btn" id="btn">Sign In</button>
+    <div class="msg error"   id="err">Incorrect password. Please try again.</div>
+    <div class="msg loading" id="loading">Decrypting data…</div>
+  </div>
+
+  <script src="data/data.enc.js"></script>
+  <script>
+    // If already authenticated, skip login
+    if (sessionStorage.getItem('trm_auth') === '1') {
+      window.location.replace('index.html');
+    }
+
+    var btn     = document.getElementById('btn');
+    var pwInput = document.getElementById('pw');
+    var err     = document.getElementById('err');
+    var loading = document.getElementById('loading');
+
+    function b64ToBytes(b64) {
+      return Uint8Array.from(atob(b64), function(c) { return c.charCodeAt(0); });
+    }
+
+    async function tryDecrypt(password) {
+      try {
+        var enc  = new TextEncoder();
+        var salt = b64ToBytes(ENCRYPTED_BLOB.salt);
+        var iv   = b64ToBytes(ENCRYPTED_BLOB.iv);
+        var data = b64ToBytes(ENCRYPTED_BLOB.data);
+
+        var keyMat = await crypto.subtle.importKey(
+          'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+        );
+        var key = await crypto.subtle.deriveKey(
+          { name: 'PBKDF2', salt: salt, iterations: 150000, hash: 'SHA-256' },
+          keyMat,
+          { name: 'AES-GCM', length: 256 },
+          false, ['decrypt']
+        );
+        var dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, data);
+        return JSON.parse(new TextDecoder().decode(dec));
+      } catch(e) {
+        return null;
+      }
+    }
+
+    async function doLogin() {
+      var password = pwInput.value;
+      if (!password) { pwInput.focus(); return; }
+
+      btn.disabled = true;
+      err.style.display = 'none';
+      loading.style.display = 'block';
+
+      var result = await tryDecrypt(password);
+      loading.style.display = 'none';
+
+      if (result && result.INGREDIENT_DATA && result.META_DATA) {
+        sessionStorage.setItem('trm_auth',            '1');
+        sessionStorage.setItem('trm_ingredient_data', JSON.stringify(result.INGREDIENT_DATA));
+        sessionStorage.setItem('trm_meta_data',       JSON.stringify(result.META_DATA));
+        var redirect = sessionStorage.getItem('trm_redirect') || 'index.html';
+        sessionStorage.removeItem('trm_redirect');
+        window.location.replace(redirect);
+      } else {
+        err.style.display = 'block';
+        btn.disabled = false;
+        pwInput.select();
+        pwInput.focus();
+      }
+    }
+
+    btn.addEventListener('click', doLogin);
+    pwInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') doLogin();
+    });
+    pwInput.focus();
+  </script>
+</body>
+</html>

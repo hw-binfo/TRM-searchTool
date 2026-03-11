@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Results</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f8f8f8;
+      color: #333;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: #a0b4ff;
+      text-decoration: none;
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+      transition: color 0.2s;
+    }
+    .back-btn:hover { color: #fff; }
+    .back-btn::before { content: "\2190"; font-size: 1.1em; }
+
+    .header {
+      margin-bottom: 1.5rem;
+    }
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    /* Re-search bar */
+    .search-form {
+      display: flex;
+      border-radius: 999px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      max-width: 520px;
+    }
+    .search-input {
+      flex: 1;
+      padding: 0.65rem 1.1rem;
+      border: none;
+      font-size: 0.95rem;
+      outline: none;
+      color: #333;
+    }
+    .search-btn {
+      padding: 0.65rem 1.2rem;
+      background: #4a6cf7;
+      color: #fff;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .search-btn:hover { background: #3a5ae0; }
+
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      overflow: hidden;
+      color: #333;
+      margin-top: 1.5rem;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem 1rem;
+      background: #f5f6fa;
+      border-bottom: 1px solid #e0e3eb;
+      flex-wrap: wrap;
+    }
+    .toolbar .count {
+      font-size: 0.85rem;
+      color: #666;
+      white-space: nowrap;
+    }
+    .toolbar input[type="text"] {
+      flex: 1;
+      min-width: 180px;
+      padding: 0.45rem 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .toolbar input[type="text"]:focus { border-color: #4a6cf7; }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    table {
+      width: auto;
+      min-width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    thead th {
+      background: #f5f6fa;
+      padding: 0.7rem 0.9rem;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 2px solid #e0e3eb;
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    tbody td {
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid #eee;
+      vertical-align: top;
+    }
+
+    tbody tr:hover { background: #f0f3ff; }
+
+    /* Column resize handle */
+    .col-resize-handle {
+      position: absolute;
+      right: -3px;
+      top: 0;
+      width: 6px;
+      height: 100%;
+      cursor: col-resize;
+      z-index: 10;
+      background: transparent;
+    }
+    .col-resize-handle:hover,
+    .col-resize-handle.active {
+      background: rgba(74, 108, 247, 0.35);
+    }
+
+    /* Tag badges */
+    .tag-cell {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+    }
+    .tag-badge {
+      display: inline-block;
+      padding: 0.15em 0.55em;
+      background: #e8ecff;
+      color: #3a5ae0;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    /* Efficacy indicators */
+    .eff-cell { text-align: center; }
+    .eff-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #4a6cf7;
+    }
+    .china-check {
+      color: #e04040;
+      font-size: 1.2rem;
+      font-weight: 900;
+    }
+    .eff-dash {
+      color: #ccc;
+      font-size: 0.8rem;
+    }
+
+    /* Highlight matching text */
+    mark {
+      background: #fff3b0;
+      color: inherit;
+      border-radius: 2px;
+      padding: 0 1px;
+    }
+
+    .no-data {
+      padding: 3rem;
+      text-align: center;
+      color: #888;
+      font-size: 1rem;
+    }
+
+    .ing-link { color: #4a6cf7; text-decoration: none; font-weight: 500; }
+    .ing-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="index.html" class="back-btn">Back to Dashboard</a>
+
+    <div class="header">
+      <h1 id="page-title">Search Results</h1>
+      <form class="search-form" id="search-form" action="search-results.html" method="get">
+        <input class="search-input" type="text" name="q" id="search-input"
+               placeholder="Search by ingredient name or INCI name..." autocomplete="off">
+        <button class="search-btn" type="submit">Search</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <span class="count" id="count-info">Loading...</span>
+        <input type="text" id="filter-input" placeholder="Filter within results...">
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead id="table-head"></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+        <div class="no-data" id="no-data" style="display:none;">No ingredients found.</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="data/auth-guard.js"></script>
+  <script>
+    function esc(s) {
+      var d = document.createElement('div');
+      d.textContent = String(s);
+      return d.innerHTML;
+    }
+
+    // Highlight occurrences of `query` within `text` (escaped HTML)
+    function highlight(text, query) {
+      if (!query) return esc(text);
+      var escaped = esc(text);
+      var escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return escaped.replace(
+        new RegExp('(' + escapedQuery + ')', 'gi'),
+        '<mark>$1</mark>'
+      );
+    }
+
+    var params = new URLSearchParams(window.location.search);
+    var query  = (params.get('q') || '').trim();
+
+    // Pre-fill the search input with current query
+    document.getElementById('search-input').value = query;
+    document.title = query ? '"' + query + '" \u2014 Search Results' : 'Search Results';
+    document.getElementById('page-title').textContent =
+      query ? 'Results for \u201c' + query + '\u201d' : 'Search Results';
+
+    var infoCols     = META_DATA.info_columns    || [];
+    var efficacyCols = META_DATA.efficacy_columns || [];
+    var storedWidths = [];
+
+    // Filter: match query against "Ingredient name" or "INCI Name"
+    var queryLower = query.toLowerCase();
+    var allRows = INGREDIENT_DATA.filter(function(row) {
+      if (!queryLower) return true;
+      return String(row['Ingredient name'] || '').toLowerCase().indexOf(queryLower) !== -1 ||
+             String(row['INCI Name']       || '').toLowerCase().indexOf(queryLower) !== -1;
+    });
+
+    renderTable(allRows);
+    updateCount(allRows.length, allRows.length);
+
+    function renderTable(rows) {
+      var thead  = document.getElementById('table-head');
+      var tbody  = document.getElementById('table-body');
+      var noData = document.getElementById('no-data');
+
+      var displayInfoCols = infoCols.filter(function(c) { return c !== 'Category'; });
+
+      // Header
+      var headerHtml = '<tr>';
+      headerHtml += '<th>Category</th>';
+      displayInfoCols.forEach(function(c) {
+        if (c === 'China compliant') {
+          headerHtml += '<th class="eff-cell">' + esc(c) + '</th>';
+        } else {
+          headerHtml += '<th>' + esc(c) + '</th>';
+        }
+      });
+      headerHtml += '<th>Tags</th>';
+      efficacyCols.forEach(function(c) {
+        headerHtml += '<th class="eff-cell">' + esc(c) + '</th>';
+      });
+      headerHtml += '</tr>';
+      thead.innerHTML = headerHtml;
+
+      // Re-apply stored widths
+      if (storedWidths.length > 0) {
+        var thEls = thead.querySelectorAll('th');
+        for (var j = 0; j < thEls.length; j++) {
+          if (storedWidths[j]) thEls[j].style.width = storedWidths[j] + 'px';
+        }
+      }
+
+      if (rows.length === 0) {
+        tbody.innerHTML = '';
+        noData.style.display = 'block';
+        attachHandles();
+        return;
+      }
+      noData.style.display = 'none';
+
+      var bodyHtml = '';
+      rows.forEach(function(row) {
+        bodyHtml += '<tr>';
+        // Category
+        bodyHtml += '<td>' + esc(String(row['Category'] || '')) + '</td>';
+        // Info cols
+        displayInfoCols.forEach(function(c) {
+          if (c === 'China compliant') {
+            if (String(row[c]) === 'Y') {
+              bodyHtml += '<td class="eff-cell"><span class="china-check">\u2714</span></td>';
+            } else {
+              bodyHtml += '<td class="eff-cell"></td>';
+            }
+          } else if (c === 'Ingredient name') {
+            bodyHtml += '<td><a class="ing-link" href="ingredient-detail.html?name=' +
+              encodeURIComponent(String(row[c] || '')) + '">' +
+              highlight(String(row[c] || ''), query) + '</a></td>';
+          } else {
+            // Highlight INCI Name field
+            var val = String(row[c] || '');
+            var cell = (c === 'INCI Name') ? highlight(val, query) : esc(val);
+            bodyHtml += '<td>' + cell + '</td>';
+          }
+        });
+        // Tags
+        var tagsStr  = String(row['Tags'] || '');
+        var tagsHtml = '<td><div class="tag-cell">';
+        if (tagsStr) {
+          tagsStr.split(',').forEach(function(t) {
+            t = t.trim();
+            if (t) tagsHtml += '<span class="tag-badge">#' + esc(t) + '</span>';
+          });
+        }
+        tagsHtml += '</div></td>';
+        bodyHtml += tagsHtml;
+        // Efficacy
+        efficacyCols.forEach(function(c) {
+          if (String(row[c]) === 'O') {
+            bodyHtml += '<td class="eff-cell"><span class="eff-dot"></span></td>';
+          } else {
+            bodyHtml += '<td class="eff-cell"><span class="eff-dash">-</span></td>';
+          }
+        });
+        bodyHtml += '</tr>';
+      });
+      tbody.innerHTML = bodyHtml;
+
+      requestAnimationFrame(function() { attachHandles(); });
+    }
+
+    // Column resize
+    function attachHandles() {
+      var table = document.querySelector('table');
+      var ths   = Array.prototype.slice.call(table.querySelectorAll('thead th'));
+      if (!ths.length) return;
+
+      if (storedWidths.length === 0) {
+        storedWidths = ths.map(function(th) {
+          return Math.max(50, th.getBoundingClientRect().width);
+        });
+        table.style.tableLayout = 'fixed';
+        ths.forEach(function(th, i) { th.style.width = storedWidths[i] + 'px'; });
+      }
+
+      ths.forEach(function(th, i) {
+        var old = th.querySelector('.col-resize-handle');
+        if (old) old.remove();
+
+        var handle = document.createElement('div');
+        handle.className = 'col-resize-handle';
+        th.appendChild(handle);
+
+        handle.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          var startX = e.clientX;
+          var startW = th.getBoundingClientRect().width;
+          handle.classList.add('active');
+          document.body.style.cursor     = 'col-resize';
+          document.body.style.userSelect = 'none';
+
+          function onMove(ev) {
+            var w = Math.max(40, startW + (ev.clientX - startX));
+            th.style.width  = w + 'px';
+            storedWidths[i] = w;
+          }
+          function onUp() {
+            handle.classList.remove('active');
+            document.body.style.cursor     = '';
+            document.body.style.userSelect = '';
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup',   onUp);
+          }
+          document.addEventListener('mousemove', onMove);
+          document.addEventListener('mouseup',   onUp);
+        });
+      });
+    }
+
+    // Filter within results
+    document.getElementById('filter-input').addEventListener('input', function() {
+      var q = this.value.toLowerCase();
+      var filtered = allRows.filter(function(row) {
+        return infoCols.some(function(c) {
+          return String(row[c] || '').toLowerCase().indexOf(q) !== -1;
+        });
+      });
+      renderTable(filtered);
+      updateCount(filtered.length, allRows.length);
+    });
+
+    function updateCount(shown, total) {
+      var el = document.getElementById('count-info');
+      el.textContent = (shown === total)
+        ? total + ' ingredient(s) found'
+        : shown + ' of ' + total + ' ingredient(s)';
+    }
+  </script>
+</body>
+</html>
