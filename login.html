@@ -138,6 +138,7 @@
 
       if (result && result.INGREDIENT_DATA && result.META_DATA) {
         sessionStorage.setItem('trm_auth',            '1');
+        sessionStorage.setItem('trm_pw',              password);   // used by plot loaders
         sessionStorage.setItem('trm_ingredient_data', JSON.stringify(result.INGREDIENT_DATA));
         sessionStorage.setItem('trm_meta_data',       JSON.stringify(result.META_DATA));
         var redirect = sessionStorage.getItem('trm_redirect') || 'index.html';
