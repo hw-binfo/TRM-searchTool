@@ -169,6 +169,16 @@
     }
     .quick-btn-primary:hover { background: #3a5ae0; }
 
+    .chart-card {
+      height: 360px;
+    }
+    .chart-card iframe,
+    .chart-card .chart-inner {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
     /* Hamburger menu button */
     .menu-btn {
       position: fixed;
@@ -260,6 +270,7 @@
     }
     .side-nav-btn:hover { background: rgba(255,255,255,0.18); }
   </style>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
 </head>
 <body>
 
@@ -308,10 +319,71 @@
       <h2>MB LAB Ingredients by Efficacy <span class="click-hint">Click a bar to see ingredients</span></h2>
       <iframe src="plots/barchart_v3.html" loading="lazy"></iframe>
     </div>
+    <div class="card chart-card">
+      <h2>RMS Code Number Coverage</h2>
+      <div class="chart-inner" id="rms-chart"></div>
+    </div>
+    <div class="card chart-card">
+      <h2>China Compliant Proportion</h2>
+      <div class="chart-inner" id="china-chart"></div>
+    </div>
   </div>
 
   <script src="data/auth-guard.js"></script>
   <script>
+    // ── RMS Code Number pie chart ──
+    (function() {
+      var data = window.INGREDIENT_DATA || [];
+      var withRMS = 0, noRMS = 0;
+      data.forEach(function(row) {
+        var v = String(row['RMS Code Number'] || '').trim();
+        if (!v || v === 'N/A' || v === '???' || v === '-' || v === 'N') {
+          noRMS++;
+        } else {
+          withRMS++;
+        }
+      });
+
+      var CHART_BG = '#ffffff';
+      var layoutBase = {
+        paper_bgcolor: CHART_BG,
+        plot_bgcolor:  CHART_BG,
+        margin: { t: 10, b: 10, l: 10, r: 10 },
+        showlegend: true,
+        legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.08 }
+      };
+      var config = { responsive: true, displayModeBar: false };
+
+      Plotly.newPlot('rms-chart', [{
+        type: 'pie',
+        hole: 0.52,
+        labels: ['Has RMS Code', 'No RMS Code'],
+        values: [withRMS, noRMS],
+        marker: { colors: ['#4a6cf7', '#c8c8c8'] },
+        textinfo: 'label+percent',
+        hovertemplate: '%{label}: %{value} ingredients<extra></extra>',
+        textfont: { size: 13 }
+      }], layoutBase, config);
+
+      // ── China compliant donut chart ──
+      var chinaY = 0, chinaN = 0;
+      data.forEach(function(row) {
+        if (String(row['China compliant'] || '').trim() === 'Y') { chinaY++; }
+        else { chinaN++; }
+      });
+
+      Plotly.newPlot('china-chart', [{
+        type: 'pie',
+        hole: 0.52,
+        labels: ['China compliant', 'Not compliant'],
+        values: [chinaY, chinaN],
+        marker: { colors: ['#f75252', '#c8c8c8'] },
+        textinfo: 'label+percent',
+        hovertemplate: '%{label}: %{value} ingredients<extra></extra>',
+        textfont: { size: 13 }
+      }], layoutBase, config);
+    })();
+
     var menuBtn     = document.getElementById('menu-btn');
     var sidePanel   = document.getElementById('side-panel');
     var sideOverlay = document.getElementById('side-overlay');
