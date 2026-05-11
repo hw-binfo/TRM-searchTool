@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Login – TRM</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f8f8f8;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .login-box {
+      background: #fff;
+      color: #333;
+      border-radius: 12px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    }
+
+    .login-box h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+      color: #111;
+    }
+
+    .login-box .subtitle {
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 2rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 0.35rem;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.6rem 0.85rem;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus { border-color: #4a6cf7; }
+
+    .error-msg {
+      background: #fff0f0;
+      color: #d93025;
+      border: 1px solid #fbc8c8;
+      border-radius: 6px;
+      padding: 0.55rem 0.85rem;
+      font-size: 0.85rem;
+      margin-bottom: 1.1rem;
+      display: none;
+    }
+    .error-msg.show { display: block; }
+
+    .btn-login {
+      width: 100%;
+      padding: 0.75rem;
+      background: #4a6cf7;
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 0.5rem;
+    }
+    .btn-login:hover { background: #3a5ae0; }
+
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 1.25rem;
+      font-size: 0.85rem;
+      color: #888;
+      text-decoration: none;
+    }
+    .back-link:hover { color: #4a6cf7; }
+  </style>
+</head>
+<body>
+
+  <div class="login-box">
+    <h1>Account Login</h1>
+    <p class="subtitle">Sign in with your TRM account.</p>
+
+    <div class="error-msg" id="error-msg">Incorrect username or password.</div>
+
+    <form id="login-form">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" placeholder="Enter your account ID" autocomplete="username" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" autocomplete="current-password" required>
+      </div>
+      <button class="btn-login" type="submit">Sign In</button>
+    </form>
+
+    <a href="index.html" class="back-link">← Back to Dashboard</a>
+  </div>
+
+  <!-- Requires data-level auth first -->
+  <script src="data/auth-guard.js"></script>
+  <!-- Account definitions -->
+  <script src="data/accounts.js"></script>
+  <script>
+    // If already logged into an account, skip to My Page
+    (function() {
+      var stored = sessionStorage.getItem('trm_user');
+      if (stored) {
+        window.location.replace('mypage.html');
+      }
+    })();
+
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      var username = document.getElementById('username').value.trim();
+      var password = document.getElementById('password').value;
+      var errorEl  = document.getElementById('error-msg');
+
+      // Find matching account
+      var match = null;
+      for (var i = 0; i < ACCOUNTS.length; i++) {
+        if (ACCOUNTS[i].username === username && ACCOUNTS[i].password === password) {
+          match = ACCOUNTS[i];
+          break;
+        }
+      }
+
+      if (!match) {
+        errorEl.classList.add('show');
+        return;
+      }
+
+      errorEl.classList.remove('show');
+
+      // Store user session (no sensitive data beyond display info)
+      sessionStorage.setItem('trm_user', JSON.stringify({
+        username:    match.username,
+        displayName: match.displayName,
+        role:        match.role
+      }));
+
+      // Redirect to My Page (or wherever they came from)
+      var redirect = sessionStorage.getItem('trm_user_redirect') || 'mypage.html';
+      sessionStorage.removeItem('trm_user_redirect');
+      window.location.replace(redirect);
+    });
+  </script>
+</body>
+</html>
