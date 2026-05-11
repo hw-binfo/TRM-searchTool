@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Page – TRM</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f8f8f8;
+      color: #333;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* Top bar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: #4a6cf7;
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+    .back-btn::before { content: "\2190"; font-size: 1.1em; }
+    .back-btn:hover { color: #3a5ae0; }
+
+    .btn-logout {
+      padding: 0.45rem 1.1rem;
+      background: transparent;
+      border: 1px solid #ddd;
+      border-radius: 999px;
+      font-size: 0.88rem;
+      color: #666;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-logout:hover { background: #fee; color: #d93025; border-color: #fbc8c8; }
+
+    /* Profile header */
+    .profile-header {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      padding: 1.75rem 2rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #4a6cf7;
+      color: #fff;
+      font-size: 1.6rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .profile-info h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.2rem;
+    }
+
+    .profile-info .role-badge {
+      display: inline-block;
+      padding: 0.2em 0.7em;
+      background: #eef1ff;
+      color: #4a6cf7;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .profile-info .role-badge.admin {
+      background: #fff4e6;
+      color: #e07700;
+    }
+
+    /* Section cards */
+    .section-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      padding: 1.5rem 2rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .section-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      padding-bottom: 0.65rem;
+      border-bottom: 1px solid #eee;
+      color: #222;
+    }
+
+    /* Placeholder state */
+    .placeholder-box {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: #aaa;
+    }
+
+    .placeholder-box .placeholder-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+      opacity: 0.4;
+    }
+
+    .placeholder-box p {
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    .placeholder-box .coming-soon {
+      display: inline-block;
+      margin-top: 0.75rem;
+      padding: 0.3em 0.9em;
+      background: #f0f3ff;
+      color: #4a6cf7;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="topbar">
+      <a href="index.html" class="back-btn">Back to Dashboard</a>
+      <button class="btn-logout" id="btn-logout">Log out</button>
+    </div>
+
+    <!-- Profile header (filled by JS) -->
+    <div class="profile-header">
+      <div class="avatar" id="avatar-initials">?</div>
+      <div class="profile-info">
+        <h2 id="display-name">Loading...</h2>
+        <span class="role-badge" id="role-badge"></span>
+      </div>
+    </div>
+
+    <!-- Registered Ingredients -->
+    <div class="section-card">
+      <h3>My Registered Ingredients</h3>
+      <div class="placeholder-box">
+        <div class="placeholder-icon">&#x1F9EA;</div>
+        <p>Your submitted ingredient registrations will appear here.</p>
+        <span class="coming-soon">Coming soon</span>
+      </div>
+    </div>
+
+    <!-- Saved Searches -->
+    <div class="section-card">
+      <h3>Saved Searches</h3>
+      <div class="placeholder-box">
+        <div class="placeholder-icon">&#x1F50D;</div>
+        <p>Save ingredient searches and filters to revisit later.</p>
+        <span class="coming-soon">Coming soon</span>
+      </div>
+    </div>
+
+    <!-- Account Settings -->
+    <div class="section-card">
+      <h3>Account Settings</h3>
+      <div class="placeholder-box">
+        <div class="placeholder-icon">&#x2699;&#xFE0F;</div>
+        <p>Password change and profile settings will be available here.</p>
+        <span class="coming-soon">Coming soon</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Requires data-level auth first -->
+  <script src="data/auth-guard.js"></script>
+  <script>
+    // Require user account login
+    (function() {
+      var stored = sessionStorage.getItem('trm_user');
+      if (!stored) {
+        sessionStorage.setItem('trm_user_redirect', window.location.href);
+        window.location.replace('accounts.html');
+        return;
+      }
+
+      var user = JSON.parse(stored);
+
+      // Avatar initials
+      var initials = user.displayName
+        ? user.displayName.split(' ').map(function(w) { return w[0]; }).join('').slice(0,2).toUpperCase()
+        : user.username.slice(0,2).toUpperCase();
+      document.getElementById('avatar-initials').textContent = initials;
+
+      // Name + role badge
+      document.getElementById('display-name').textContent = user.displayName || user.username;
+      var badge = document.getElementById('role-badge');
+      badge.textContent = user.role === 'admin' ? 'Admin' : 'Member';
+      if (user.role === 'admin') badge.classList.add('admin');
+    })();
+
+    document.getElementById('btn-logout').addEventListener('click', function() {
+      sessionStorage.removeItem('trm_user');
+      window.location.replace('index.html');
+    });
+  </script>
+</body>
+</html>
